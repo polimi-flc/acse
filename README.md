@@ -70,7 +70,78 @@ to be installed:
 - **GNU bison**
 - **GNU flex**
 
-If you use **Windows**, first you must install either the
+
+**Windows (native build via Chocolatey)**
+
+To build ACSE directly on Windows (32- or 64-bit), we recommend using [Chocolatey](https://docs.chocolatey.org/en-us/choco/setup/) to install all required tools:
+
+1. **Install Chocolatey**  
+   Open PowerShell _as Administrator_ and run:  
+   ```powershell
+   Set-ExecutionPolicy Bypass -Scope Process -Force; `
+     [System.Net.ServicePointManager]::SecurityProtocol = `
+       [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+     iex ((New-Object System.Net.WebClient).DownloadString(
+       'https://community.chocolatey.org/install.ps1'))
+
+2. **Install MinGW (GCC toolchain)**
+
+   ```powershell
+   choco install mingw -y
+   ```
+
+3. **Install Bison & Flex**
+
+   ```powershell
+   choco install winflexbison3 -y
+   ```
+
+4. **Install GNU Make**
+
+   ```powershell
+   choco install make -y
+   ```
+
+5. **Adjust the ACSE Makefiles**
+   In `acse/Makefile`, change the parser/lexer rules to point at the Windows executables:
+
+   ```make
+   BISON := win_bison.exe
+   FLEX  := win_flex.exe
+   ```
+
+   Then, in the top-level `Makefile`, force use of `gcc` instead of `cc`:
+
+   ```make
+    .PHONY: all
+    all: acse simrv32im asrv32im
+    
+    .PHONY: acse
+    acse:
+    	$(MAKE) -C acse CC=gcc
+    
+    .PHONY: simrv32im
+    simrv32im:
+    	$(MAKE) -C simrv32im CC=gcc
+    
+    .PHONY: asrv32im
+    asrv32im:
+    	$(MAKE) -C asrv32im CC=gcc
+    
+    .PHONY: tests
+    tests: acse simrv32im asrv32im
+    	$(MAKE) -C tests CC=gcc
+    
+    .PHONY: clean
+    clean:
+    	$(MAKE) -C acse clean
+    	$(MAKE) -C simrv32im clean
+    	$(MAKE) -C asrv32im clean
+    	$(MAKE) -C tests clean
+    	rm -rf bin
+   ```
+
+Alternatively you can install either the
 [MSYS2](https://www.msys2.org) environment or **Windows Services for Linux**
 (WSL). Both MSYS2 and Windows Services for Linux (WSL) provide a Linux-like
 environment inside of Windows.
